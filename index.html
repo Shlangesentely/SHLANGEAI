@@ -1,0 +1,135 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShlangeAI - Multi-AI Chat</title>
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>ShlangeAI</h1>
+                <p class="tagline">Your AI Companions</p>
+            </div>
+            
+            <nav class="persona-nav">
+                <button class="persona-btn active" data-persona="companion">
+                    <span class="icon">💬</span>
+                    <span class="label">Companion</span>
+                </button>
+                <button class="persona-btn" data-persona="code">
+                    <span class="icon">💻</span>
+                    <span class="label">Code Buddy</span>
+                </button>
+                <button class="persona-btn" data-persona="study">
+                    <span class="icon">📚</span>
+                    <span class="label">Study Helper</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="admin-btn" id="adminBtn">
+                    <span class="icon">⚙️</span>
+                    <span class="label">Admin</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-area">
+            <div class="chat-header">
+                <h2 id="personaTitle">Companion</h2>
+                <p id="personaDescription">Your friendly AI companion for general conversations</p>
+                <button class="clear-btn" id="clearChatBtn">Clear Chat</button>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-message">
+                    <h3>👋 Welcome to ShlangeAI!</h3>
+                    <p>Select a persona and start chatting with your AI companion.</p>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <textarea id="messageInput" placeholder="Type your message here..." rows="1"></textarea>
+                <button id="sendBtn" class="send-btn">
+                    <span>Send</span>
+                    <span class="icon">📤</span>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Admin Modal -->
+    <div class="modal" id="adminModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Admin Settings</h2>
+                <button class="close-btn" id="closeModalBtn">�</button>
+            </div>
+            
+            <div class="modal-body" id="modalBody">
+                <!-- Admin Unlock Section -->
+                <div id="admin-unlock-section">
+                    <div class="form-group">
+                        <label for="admin-code-input">Enter Admin Code:</label>
+                        <input type="password" id="admin-code-input" placeholder="Enter admin code" autocomplete="off">
+                        <button id="admin-unlock-btn" class="primary-btn">Unlock Admin</button>
+                        <p id="admin-message" class="message"></p>
+                    </div>
+                </div>
+
+                <!-- Admin Features (shown after unlock) -->
+                <div id="admin-features" style="display: none;">
+                    <div class="admin-header">
+                        <h3>Admin Panel</h3>
+                        <button id="admin-logout-btn" class="secondary-btn">Logout</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="companion-name">Companion Name:</label>
+                        <input type="text" id="companion-name" placeholder="e.g., Alex, Sam, Taylor">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="companion-personality">Companion Personality:</label>
+                        <input type="text" id="companion-personality" placeholder="e.g., Friendly and empathetic">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="companion-tone">Companion Tone (1-10): <span id="tone-value">5</span></label>
+                        <input type="range" id="companion-tone" min="1" max="10" value="5">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="companion-prompt">Companion System Prompt:</label>
+                        <textarea id="companion-prompt" rows="4" placeholder="System prompt for the companion AI"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Chat History:</label>
+                        <div class="admin-actions">
+                            <button id="exportHistoryBtn" class="secondary-btn">Export All</button>
+                            <button id="clearAllHistoryBtn" class="danger-btn">Clear All History</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <button id="saveSettingsBtn" class="primary-btn">Save Settings</button>
+                        <p class="success-message" id="settingsSuccess"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="scripts/config.js"></script>
+    <script src="scripts/storage.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/auth.js"></script>
+    <script src="scripts/ui.js"></script>
+
+
+</body></html>
