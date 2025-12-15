@@ -1,7 +1,7 @@
 /**
  * api.js - API integration for ShlangeAI
  * Handles communication with backend API
- * 
+ *
  * Dependencies: Storage (from storage.js)
  * Note: This file must be loaded after storage.js
  */
@@ -11,12 +11,19 @@ if (typeof Storage === 'undefined') {
     throw new Error('Storage is not defined. Ensure storage.js is loaded before api.js');
 }
 
+// EdgeAI API Key (IMPORTANT: In a real application, do not hardcode sensitive keys directly in frontend code.
+// Consider environment variables, a secure build process, or a backend proxy to inject/manage this key.)
+const EDGEAI_API_KEY = 'eak_goL3JgmBBbxUyKavJsRBeXxJssafbvlGqCQCB2TVv75hVOOy';
+
 // Backend URL configuration - auto-detects environment
+// For EdgeAI, you might have a specific API endpoint.
+// Assuming a generic /api endpoint for now, similar to the previous setup.
 const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:3000/api'  // Local development
-    : 'https://shlangeai-backend.onrender.com/api';  // Production (Render deployment)
+    ? 'http://localhost:3000/api'  // Local development backend (e.g., your own proxy or mock)
+    : 'https://shlangeai-backend.onrender.com/api'; // Production backend (could be a proxy to EdgeAI)
 
 // Azure Function proxy URL (replace with your deployed Azure Function URL)
+// If using Azure as a proxy to EdgeAI, this URL would point to your Azure Function.
 const AZURE_PROXY_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:7071/api'  // Local Azure Functions development
     : 'https://your-function-app.azurewebsites.net/api';  // Production Azure Function (TODO: Update this with your actual Azure Function URL!)
@@ -29,8 +36,11 @@ const ACTIVE_PROXY_URL = USE_AZURE_PROXY ? AZURE_PROXY_URL : BACKEND_URL;
 
 console.log('[API] Active proxy URL configured:', ACTIVE_PROXY_URL);
 console.log('[API] Using Azure proxy:', USE_AZURE_PROXY);
+console.log('[API] Using EdgeAI API Key (ensure this is handled securely in production)');
+
 
 // Default model for all personas
+// EdgeAI might have its own model naming conventions. Assuming 'sonar' is compatible or a placeholder.
 const DEFAULT_MODEL = 'sonar';
 
 const API = {
@@ -44,13 +54,13 @@ const API = {
         },
         code: {
             name: 'Code Buddy',
-            icon: 'fucer',
+            icon: '💻', // Changed from 'fucer' for better representation
             description: 'Your expert programming assistant for coding help',
             model: DEFAULT_MODEL
         },
         study: {
             name: 'Study Helper',
-            icon: 'idiot',
+            icon: '📚', // Changed from 'idiot' for better representation
             description: 'Your knowledgeable tutor for learning and studying',
             model: DEFAULT_MODEL
         }
@@ -78,12 +88,12 @@ const API = {
      */
     async getResponse(persona, userMessage) {
         console.log(`[API] Getting response for persona: ${persona}`);
-        
+
         try {
             // Get persona configuration
             const personaConfig = this.getPersonaConfig(persona);
             const personaData = Storage.getPersona(persona);
-            
+
             // Build messages array with system prompt and user message
             const messages = [
                 {
@@ -96,16 +106,21 @@ const API = {
                 }
             ];
 
+            // Construct headers, including the Authorization header with the EdgeAI key
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${EDGEAI_API_KEY}` // Added EdgeAI API Key here
+            };
+
             // Make API request to backend
             console.log(`[API] Sending request to: ${ACTIVE_PROXY_URL}/chat`);
             const response = await fetch(`${ACTIVE_PROXY_URL}/chat`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: headers, // Use the constructed headers object
                 body: JSON.stringify({
                     model: personaConfig.model,
                     messages: messages
+                    // Any other EdgeAI specific parameters might go here
                 })
             });
 
@@ -128,23 +143,24 @@ const API = {
             const data = await response.json();
             console.log('[API] Response received successfully');
 
-            // Extract message from Perplexity API response format
+            // Extract message from Perplexity API response format (assuming EdgeAI uses a similar format)
             if (data.choices && data.choices.length > 0 && data.choices[0].message) {
                 const aiResponse = data.choices[0].message.content;
                 return { response: aiResponse };
             } else {
-                console.error('[API] Unexpected response format:', data);
+                console.error('[API] Unexpected response format from EdgeAI:', data);
+                // If EdgeAI uses a different response structure, this part will need adjustment.
                 throw new Error('Unexpected response format from API');
             }
 
         } catch (error) {
             console.error('[API] Error getting response:', error);
-            
+
             // Network errors - TypeError is thrown for network failures
             if (error instanceof TypeError && !error.message.startsWith('API request failed')) {
                 throw new Error('Unable to connect to backend. Please check your internet connection.');
             }
-            
+
             // Re-throw other errors with context
             throw new Error(error.message || 'Failed to get AI response');
         }
