@@ -1,6 +1,7 @@
+// js/api.js
 /**
  * api.js - API integration for ShlangeAI
- * Handles communication with backend API
+ * Handles communication with external AI API
  *
  * Dependencies: Storage (from storage.js)
  * Note: This file must be loaded after storage.js
@@ -11,37 +12,27 @@ if (typeof Storage === 'undefined') {
     throw new Error('Storage is not defined. Ensure storage.js is loaded before api.js');
 }
 
-// EdgeAI API Key (IMPORTANT: In a real application, do not hardcode sensitive keys directly in frontend code.
-// Consider environment variables, a secure build process, or a backend proxy to inject/manage this key.)
-const EDGEAI_API_KEY = 'eak_goL3JgmBBbxUyKavJsRBeXxJssafbvlGqCQCB2TVv75hVOOy';
+// IMPORTANT: Hardcoding API keys in frontend code is generally NOT recommended for production environments.
+// This is done here as per user request. For production, consider secure backend proxying.
+const PERPLEXITY_API_KEY = 'eak_goL3JgmBBbxUyKavJsRBeXxJssafbvlGqCQCB2TVv75hVOOy';
+const PERPLEXITY_API_ENDPOINT = 'https://api.perplexity.ai/chat/completions';
 
-// Backend URL configuration - auto-detects environment
-// For EdgeAI, you might have a specific API endpoint.
-// Assuming a generic /api endpoint for now, similar to the previous setup.
-const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:3000/api'  // Local development backend (e.g., your own proxy or mock)
-    : 'https://shlangeai-backend.onrender.com/api'; // Production backend (could be a proxy to EdgeAI)
+// Original backend proxy configuration (commented out as direct API call is requested)
+// const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+//     ? 'http://localhost:3000/api'  // Local development
+//     : 'https://shlangeai-backend.onrender.com/api';  // Production (Render deployment)
 
-// Azure Function proxy URL (replace with your deployed Azure Function URL)
-// If using Azure as a proxy to EdgeAI, this URL would point to your Azure Function.
-const AZURE_PROXY_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:7071/api'  // Local Azure Functions development
-    : 'https://your-function-app.azurewebsites.net/api';  // Production Azure Function (TODO: Update this with your actual Azure Function URL!)
+// const AZURE_PROXY_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+//     ? 'http://localhost:7071/api'  // Local Azure Functions development
+//     : 'https://your-function-app.azurewebsites.net/api';  // Production Azure Function (TODO: Update this with your actual Azure Function URL!)
 
-// Proxy selection - set to true to use Azure Function, false to use Render backend
-const USE_AZURE_PROXY = false;
+// const USE_AZURE_PROXY = false; // Set to true to use Azure Function, false to use Render backend
+// const ACTIVE_PROXY_URL = USE_AZURE_PROXY ? AZURE_PROXY_URL : BACKEND_URL;
 
-// Active proxy URL based on configuration
-const ACTIVE_PROXY_URL = USE_AZURE_PROXY ? AZURE_PROXY_URL : BACKEND_URL;
-
-console.log('[API] Active proxy URL configured:', ACTIVE_PROXY_URL);
-console.log('[API] Using Azure proxy:', USE_AZURE_PROXY);
-console.log('[API] Using EdgeAI API Key (ensure this is handled securely in production)');
-
+console.log('[API] Using direct Perplexity AI API endpoint.');
 
 // Default model for all personas
-// EdgeAI might have its own model naming conventions. Assuming 'sonar' is compatible or a placeholder.
-const DEFAULT_MODEL = 'sonar';
+const DEFAULT_MODEL = 'sonar'; // Perplexity AI supports models like 'sonar-small-chat', 'sonar-medium-chat'
 
 const API = {
     // Persona configurations
@@ -54,13 +45,13 @@ const API = {
         },
         code: {
             name: 'Code Buddy',
-            icon: '💻', // Changed from 'fucer' for better representation
+            icon: '💻', // Changed from 'fucer' to a more appropriate icon for Code Buddy
             description: 'Your expert programming assistant for coding help',
             model: DEFAULT_MODEL
         },
         study: {
             name: 'Study Helper',
-            icon: '📚', // Changed from 'idiot' for better representation
+            icon: '📚', // Changed from 'idiot' to a more appropriate icon for Study Helper
             description: 'Your knowledgeable tutor for learning and studying',
             model: DEFAULT_MODEL
         }
@@ -90,7 +81,7 @@ const API = {
         console.log(`[API] Getting response for persona: ${persona}`);
 
         try {
-            // Get persona configuration
+            // Get persona configuration and data
             const personaConfig = this.getPersonaConfig(persona);
             const personaData = Storage.getPersona(persona);
 
@@ -106,63 +97,58 @@ const API = {
                 }
             ];
 
-            // Construct headers, including the Authorization header with the EdgeAI key
-            const headers = {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${EDGEAI_API_KEY}` // Added EdgeAI API Key here
-            };
-
-            // Make API request to backend
-            console.log(`[API] Sending request to: ${ACTIVE_PROXY_URL}/chat`);
-            const response = await fetch(`${ACTIVE_PROXY_URL}/chat`, {
+            // Make API request directly to Perplexity AI
+            console.log(`[API] Sending request to Perplexity AI: ${PERPLEXITY_API_ENDPOINT}`);
+            const response = await fetch(PERPLEXITY_API_ENDPOINT, {
                 method: 'POST',
-                headers: headers, // Use the constructed headers object
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${PERPLEXITY_API_KEY}` // Hardcoded API key
+                },
                 body: JSON.stringify({
                     model: personaConfig.model,
                     messages: messages
-                    // Any other EdgeAI specific parameters might go here
                 })
             });
 
-            console.log(`[API] Response status: ${response.status}`);
+            console.log(`[API] Perplexity AI Response status: ${response.status}`);
 
             // Handle non-OK responses
             if (!response.ok) {
-                let errorMessage = `API request failed with status ${response.status}`;
+                let errorMessage = `Perplexity AI API request failed with status ${response.status}`;
                 try {
                     const errorData = await response.json();
-                    console.error('[API] Error response:', errorData);
-                    errorMessage = errorData.error || errorData.message || errorMessage;
+                    console.error('[API] Error response from Perplexity AI:', errorData);
+                    errorMessage = errorData.error?.message || errorData.message || errorMessage;
                 } catch (e) {
-                    console.error('[API] Could not parse error response:', e);
+                    console.error('[API] Could not parse error response from Perplexity AI:', e);
                 }
                 throw new Error(errorMessage);
             }
 
             // Parse successful response
             const data = await response.json();
-            console.log('[API] Response received successfully');
+            console.log('[API] Response received successfully from Perplexity AI');
 
-            // Extract message from Perplexity API response format (assuming EdgeAI uses a similar format)
+            // Extract message from Perplexity API response format
             if (data.choices && data.choices.length > 0 && data.choices[0].message) {
                 const aiResponse = data.choices[0].message.content;
                 return { response: aiResponse };
             } else {
-                console.error('[API] Unexpected response format from EdgeAI:', data);
-                // If EdgeAI uses a different response structure, this part will need adjustment.
-                throw new Error('Unexpected response format from API');
+                console.error('[API] Unexpected response format from Perplexity AI:', data);
+                throw new Error('Unexpected response format from Perplexity AI');
             }
 
         } catch (error) {
-            console.error('[API] Error getting response:', error);
+            console.error('[API] Error getting response from Perplexity AI:', error);
 
             // Network errors - TypeError is thrown for network failures
-            if (error instanceof TypeError && !error.message.startsWith('API request failed')) {
-                throw new Error('Unable to connect to backend. Please check your internet connection.');
+            if (error instanceof TypeError && !error.message.startsWith('Perplexity AI API request failed')) {
+                throw new Error('Unable to connect to Perplexity AI. Please check your internet connection.');
             }
 
             // Re-throw other errors with context
-            throw new Error(error.message || 'Failed to get AI response');
+            throw new Error(error.message || 'Failed to get AI response from Perplexity AI');
         }
     }
 };
